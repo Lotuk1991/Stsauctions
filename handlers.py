@@ -24,16 +24,11 @@ async def copart_handler(message: types.Message):
         return
 
     for lot in results:
-        text = f"{lot.get('year')} {lot.get('make')} {lot.get('modelGroup')}
-"
-        text += f"Статус: {lot.get('saleStatus')}
-"
-        text += f"Локація: {lot.get('yardName')}
-"
-        text += f"Роздрібна ціна: ${lot.get('rd', 'N/A')}
-"
-        text += f"VIN: {lot.get('vin')}
-"
+        text = f"{lot.get('year')} {lot.get('make')} {lot.get('modelGroup')}"
+        text += f"Статус: {lot.get('saleStatus')}"
+        text += f"Локація: {lot.get('yardName')}"
+        text += f"Роздрібна ціна: ${lot.get('rd', 'N/A')}"
+        text += f"VIN: {lot.get('vin')}"
         text += f"https://www.copart.com/lot/{lot.get('lotNumberStr')}"
         await message.answer_photo(photo=lot.get("thumbnailImageUrl"), caption=text)
 
