@@ -1,59 +1,37 @@
+# copart_lot_parser.py
+
+from playwright.sync_api import sync_playwright
 import json
-from playwright.async_api import async_playwright
 
-async def get_lot_info(lot_number: str) -> dict:
-    url = f"https://www.copart.com/lot/{lot_number}"
+def get_copart_lot_info(lot_id: str) -> str:
+    COOKIES_FILE = "cookies.json"
+    API_URL = f"https://www.copart.com/public/data/lotdetails/solr/{lot_id}"
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        try:
-            context = await browser.new_context(storage_state="storage_state.json")
-        except Exception as e:
-            await browser.close()
-            return {"error": f"❌ Помилка при завантаженні storage_state.json: {e}", "url": url}
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        with open(COOKIES_FILE, "r") as f:
+            cookies = json.load(f)
+        context.add_cookies(cookies)
 
-        page = await context.new_page()
-        try:
-            await page.goto(url, timeout=60000)
-        except:
-            await browser.close()
-            return {"error": "⚠️ Не вдалося завантажити сторінку", "url": url}
+        page = context.new_page()
+        page.goto("https://www.copart.com")
 
-        content = await page.content()
-        if "Page Not Found" in content or "captcha" in content.lower():
-            await browser.close()
-            return {"error": "⚠️ Не вдалося завантажити сторінку", "url": url}
+        response = page.request.get(API_URL)
+        if response.status != 200:
+            return f"❌ Лот {lot_id} не знайден (код {response.status})"
 
-        # Извлечение информации
-        def safe(selector):
-            try:
-                return page.locator(selector).first.inner_text()
-            except:
-                return "-"
+        data = response.json()
+        lot = data.get("data", {}).get("lotDetails", {})
 
-        try:
-            title = await page.inner_text("h1.title")
-        except:
-            title = "-"
-
-        location = await safe("label[data-uname='lotdetailSaleinformationlocationlabel'] + span")
-        engine = await safe("span[data-uname='lotdetailEnginetype']")
-        fuel = await safe("span[data-uname='lotdetailFuelvalue']")
-        doc_type = await safe("span[data-uname='lotdetailTitledescriptionvalue'] span span")
-
-        try:
-            vin = await page.locator("label[data-uname='lotdetailVin']").locator("..").locator("..").locator("span.lot-details-desc").inner_text()
-        except:
-            vin = "-"
-
-        await browser.close()
-
-        return {
-            "title": title.strip(),
-            "location": location.strip(),
-            "engine": engine.strip(),
-            "fuel": fuel.strip(),
-            "doc_type": doc_type.strip(),
-            "vin": vin.strip(),
-            "url": url,
-        }
+        result = f"""📌 <b>Інформація про лот {lot_id}</b>:
+🚗 <b>Авто:</b> {lot.get('lcy')} {lot.get('lmg')} {lot.get('mkn')}
+🔑 <b>VIN:</b> {lot.get('vin')}
+📉 <b>Пробіг:</b> {lot.get('orr')} {lot.get('odometerBrand')}
+📍 <b>Локація:</b> {lot.get('yn')} — {lot.get('ynm')}
+⛽ <b>Двигун:</b> {lot.get('ft')} ({lot.get('egn')})
+💥 <b>Пошкодження:</b> {lot.get('sdd')} ({lot.get('cr')})
+🛒 <b>Статус:</b> {lot.get('lotSoldStatus')} ({lot.get('lotSold')})
+"""
+        browser.close()
+        return result
