@@ -10,6 +10,7 @@ def get_copart_lot_info(lot_id: str) -> str:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         with open(COOKIES_FILE, "r") as f:
             cookies = json.load(f)
         context.add_cookies(cookies)
