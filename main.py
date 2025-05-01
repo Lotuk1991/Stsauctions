@@ -1,7 +1,9 @@
 import logging
 from aiogram import Bot, Dispatcher, executor, types
 from config import BOT_TOKEN
-from handlers import lot_handler
+from handlers import register_handlers
+register_handlers(dp)
+
 
 # Налаштування логування
 logging.basicConfig(level=logging.INFO)
