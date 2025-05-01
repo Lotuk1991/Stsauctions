@@ -35,7 +35,6 @@ async def parse_lot(message: types.Message, state: FSMContext):
     lot_id = message.text.strip()
     if not lot_id.isdigit():
         return await message.answer("❗️Номер лота має бути числом")
-
     data = await state.get_data()
     auction = data.get("auction")
     await state.finish()
