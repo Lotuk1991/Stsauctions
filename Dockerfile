@@ -21,8 +21,7 @@ RUN pip install --upgrade pip
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Устанавливаем браузеры для playwright
-RUN python -m playwright install
+
 
 # Копируем исходный код бота
 COPY . /app
