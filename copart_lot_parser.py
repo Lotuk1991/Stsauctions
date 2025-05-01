@@ -1,7 +1,3 @@
-# copart_parser.py
-import httpx
-import json
-
 def get_lot_info(lot_id: str) -> str:
     API_URL = f"https://www.copart.com/public/data/lotdetails/solr/{lot_id}"
 
@@ -15,10 +11,19 @@ def get_lot_info(lot_id: str) -> str:
 
     try:
         r = httpx.get(API_URL, headers=headers, cookies=cookies, timeout=10)
+
         if r.status_code != 200:
             return f"❌ Лот {lot_id} не знайден (код {r.status_code})"
 
-        lot = r.json().get("data", {}).get("lotDetails", {})
+        # защита от пустого ответа
+        if not r.text or r.text.strip() == "":
+            return f"❌ Відповідь пуста. Можливо, cookies недійсні."
+
+        data = r.json()
+        lot = data.get("data", {}).get("lotDetails", {})
+
+        if not lot:
+            return f"❌ Лот {lot_id} не знайден або неактивний."
 
         return f"""📌 <b>Лот {lot_id}</b>
 🚗 {lot.get('lcy')} {lot.get('lmg')} {lot.get('mkn')}
