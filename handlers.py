@@ -1,24 +1,30 @@
-from aiogram import types
+from aiogram import types, Dispatcher
 from copart_lot_parser import get_lot_info
 
 async def lot_handler(message: types.Message):
     args = message.get_args()
-    if not args:
-        await message.reply("Введи номер лота. Наприклад:\n/lot 47813034")
+    if not args or not args.isdigit():
+        await message.reply("Будь ласка, введи номер лота. Наприклад:\n/lot 47901355")
         return
 
     lot_number = args.strip()
-    await message.answer(f"Шукаю інформацію по лоту {lot_number}...")
+    await message.answer(f"🔍 Шукаю інформацію по лоту `{lot_number}`...")
 
     try:
         info = await get_lot_info(lot_number)
-        response = (
-            f"**{info['title']}**\n"
-            f"Місцезнаходження: {info['location']}\n"
-            f"VIN: `{info['vin']}`\n"
-            f"[Посилання на лот]({info['url']})"
+        text = (
+            f"🚗 **{info['title']}**\n"
+            f"📍 Місце продажу: *{info['location']}*\n"
+            f"🔋 Двигун: {info['engine']}\n"
+            f"⛽️ Паливо: {info['fuel']}\n"
+            f"📄 Документ: {info['doc_type']}\n"
+            f"🔑 VIN: `{info['vin']}`\n"
+            f"\n🔗 [Переглянути лот]({info['url']})"
         )
-        await message.answer(response, parse_mode="Markdown")
+        await message.answer(text, parse_mode="Markdown")
     except Exception as e:
-        await message.answer("Сталася помилка під час пошуку. Спробуйте пізніше.")
-        print(e)
+        await message.answer("⚠️ Не вдалося отримати дані. Спробуйте пізніше.")
+        print(f"LOT ERROR: {e}")
+
+def register_handlers(dp: Dispatcher):
+    dp.register_message_handler(lot_handler, commands=["lot"])
