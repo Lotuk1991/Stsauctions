@@ -43,7 +43,9 @@ async def get_lot_info(lot_number: str) -> dict:
         vin = await safe_get("label[data-uname='lotdetailVin'] + div span")
 
         await browser.close()
-
+html = await page.content()
+with open("debug.html", "w", encoding="utf-8") as f:
+    f.write(html)
         return {
             "title": title.strip(),
             "location": location.strip(),
