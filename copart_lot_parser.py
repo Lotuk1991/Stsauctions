@@ -8,33 +8,32 @@ async def get_lot_info(lot_number: str) -> dict:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context()
 
-        try:
-            with open("cookies.json", "r") as f:
-                cookies = json.load(f)
-            await context.add_cookies(cookies)
-        except Exception as e:
-            return {"error": f"Ошибка загрузки cookies: {e}"}
+        # Загружаем cookies
+        with open("cookies.json", "r") as f:
+            cookies = json.load(f)
+        await context.add_cookies(cookies)
 
         page = await context.new_page()
+        await page.goto(url, timeout=60000)
+
         try:
-            await page.goto(url, timeout=60000)
-            await page.wait_for_selector("label[data-uname='lotdetailVin']", timeout=15000)
-        except Exception as e:
-            await browser.close()
-            return {"error": f"Ошибка загрузки страницы: {e}"}
+            await page.wait_for_selector(".lot-details-desc", timeout=10000)
+        except:
+            return {"title": "Page not loaded", "location": "-", "engine": "-", "fuel": "-", "doc_type": "-", "vin": "-", "url": url}
 
-        def safe_text(selector):
+        def safe(selector):
             try:
-                return page.inner_text(selector)
+                return page.locator(selector).nth(0).inner_text()
             except:
-                return None
+                return "-"
 
-        title = await safe_text("label[data-uname='lotdetailTitledescription'] + span span") or "No title"
-        location = await safe_text("label[data-uname='lotdetailSaleinformationlocationlabel'] + span") or "No location"
-        engine = await safe_text("label[data-uname='lotdetailEngine'] + div span") or "No engine"
-        fuel = await safe_text("label[data-uname='lotdetailFuel'] + span") or "No fuel"
-        doc_type = await safe_text("label[data-uname='lotdetailTitledescription'] + span span") or "No doc"
-        vin = await safe_text("label[data-uname='lotdetailVin'] + div span") or "No VIN"
+        # Используем актуальные селекторы из твоего HTML:
+        title = await safe("label[data-uname='lotdetailTitledescription'] + span span")
+        location = await safe("label[data-uname='lotdetailSaleinformationlocationlabel'] + span a")
+        engine = await safe("label[data-uname='lotdetailEngine'] + div span")
+        fuel = await safe("label[data-uname='lotdetailFuel'] + span")
+        doc_type = title  # Пока что, он дублируется из title
+        vin = await safe("label[data-uname='lotdetailVin'] + div span")
 
         await browser.close()
 
@@ -45,5 +44,5 @@ async def get_lot_info(lot_number: str) -> dict:
             "fuel": fuel.strip(),
             "doc_type": doc_type.strip(),
             "vin": vin.strip(),
-            "url": url,
+            "url": url
         }
