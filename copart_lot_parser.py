@@ -9,54 +9,38 @@ async def get_lot_info(lot_number: str) -> dict:
         context = await browser.new_context()
 
         # Загрузка cookies
-        with open("cookies.json", "r") as f:
-            cookies = json.load(f)
-        await context.add_cookies(cookies)
+        try:
+            with open("cookies.json", "r") as f:
+                cookies = json.load(f)
+            await context.add_cookies(cookies)
+        except Exception as e:
+            return {"error": f"Помилка з cookies: {e}", "url": url}
 
         page = await context.new_page()
-        await page.goto(url, timeout=60000)
-
         try:
-            await page.wait_for_selector("h1.title", timeout=15000)
+            await page.goto(url, timeout=60000)
         except:
+            await browser.close()
             return {"error": "Не вдалося завантажити сторінку", "url": url}
 
-        # Извлечение всех данных
-        def safe(selector):
+        content = await page.content()
+        if "Page Not Found" in content or "captcha" in content.lower():
+            await browser.close()
+            return {"error": "Не вдалося завантажити сторінку", "url": url}
+
+        # Извлечение информации
+        def safe_get(selector):
             try:
-                return page.locator(selector).nth(0).inner_text()
+                return page.locator(selector).first.inner_text()
             except:
                 return "-"
 
-        try:
-            title = await page.inner_text("h1.title")
-        except:
-            title = "-"
-
-        try:
-            location = await page.inner_text("a[data-uname='lotdetailSaleinformationlocationvalue']")
-        except:
-            location = "-"
-
-        try:
-            engine = await page.inner_text("span[data-uname='lotdetailEnginetype']")
-        except:
-            engine = "-"
-
-        try:
-            fuel = await page.inner_text("span[data-uname='lotdetailFuelvalue']")
-        except:
-            fuel = "-"
-
-        try:
-            doc_type = await page.inner_text("span[data-uname='lotdetailTitledescriptionvalue'] span span")
-        except:
-            doc_type = "-"
-
-        try:
-            vin = await page.locator("label[data-uname='lotdetailVin']").locator("..").locator("..").locator("span.lot-details-desc").inner_text()
-        except:
-            vin = "-"
+        title = await safe_get("h1.title")
+        location = await safe_get("label[data-uname='lotdetailSaleinformationlocationlabel'] + span")
+        engine = await safe_get("span[data-uname='lotdetailEnginetype']")
+        fuel = await safe_get("span[data-uname='lotdetailFuelvalue']")
+        doc_type = await safe_get("span[data-uname='lotdetailTitledescriptionvalue'] span")
+        vin = await safe_get("label[data-uname='lotdetailVin'] + div span")
 
         await browser.close()
 
@@ -67,5 +51,5 @@ async def get_lot_info(lot_number: str) -> dict:
             "fuel": fuel.strip(),
             "doc_type": doc_type.strip(),
             "vin": vin.strip(),
-            "url": url
+            "url": url,
         }
