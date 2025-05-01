@@ -1,5 +1,7 @@
+# handlers.py
+
 from aiogram import types
-from main import dp  # импортируем dp
+from bot import dp
 from copart_lot_parser import get_copart_lot_info
 
 @dp.message_handler(commands=["lot"])
@@ -10,5 +12,8 @@ async def handle_lot_command(message: types.Message):
         return
 
     await message.reply(f"🔍 Шукаю інформацію по лоту {lot_id}...")
-    result = get_copart_lot_info(lot_id)
-    await message.reply(result, parse_mode="HTML")
+    try:
+        result = get_copart_lot_info(lot_id)
+        await message.reply(result, parse_mode="HTML")
+    except Exception as e:
+        await message.reply(f"❌ Помилка при отриманні лота: {e}")
