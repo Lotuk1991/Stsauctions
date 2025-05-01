@@ -44,12 +44,12 @@ def get_lot_info(lot_id: str) -> str:
         # Готовим сообщение
         return f"""📌 <b>Лот {lot_id}</b>
 🚗 {lot.get('lcy')} {lot.get('lmg')} {lot.get('mkn')}
-🔑 VIN: {lot.get('vin')}
-📍 Локація: {lot.get('yn')} — {lot.get('ynm')}
+🔑 VIN: {lot.get('fv')}
+📍 Локація: {lot.get('yn')}
 📉 Пробіг: {lot.get('orr')} {lot.get('odometerBrand')}
-💥 Пошкодження: {lot.get('sdd')} ({lot.get('cr')})
+💥 Тайтл: {lot.get('tgd')} 
 ⛽ Двигун: {lot.get('ft')} ({lot.get('egn')})
-🛒 Статус: {lot.get('lotSoldStatus')} ({lot.get('lotSold')})
+🛒 Привод: {lot.get('drv')}
 """
     except Exception as e:
         return f"❌ Несподівана помилка: {e}"
