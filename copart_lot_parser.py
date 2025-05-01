@@ -8,7 +8,7 @@ async def get_lot_info(lot_number: str) -> dict:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context()
 
-        # Загружаем cookies
+        # Загрузка cookies
         with open("cookies.json", "r") as f:
             cookies = json.load(f)
         await context.add_cookies(cookies)
@@ -17,23 +17,46 @@ async def get_lot_info(lot_number: str) -> dict:
         await page.goto(url, timeout=60000)
 
         try:
-            await page.wait_for_selector(".lot-details-desc", timeout=10000)
+            await page.wait_for_selector("h1.title", timeout=15000)
         except:
-            return {"title": "Page not loaded", "location": "-", "engine": "-", "fuel": "-", "doc_type": "-", "vin": "-", "url": url}
+            return {"error": "Не вдалося завантажити сторінку", "url": url}
 
+        # Извлечение всех данных
         def safe(selector):
             try:
                 return page.locator(selector).nth(0).inner_text()
             except:
                 return "-"
 
-        # Используем актуальные селекторы из твоего HTML:
-        title = await safe("label[data-uname='lotdetailTitledescription'] + span span")
-        location = await safe("label[data-uname='lotdetailSaleinformationlocationlabel'] + span a")
-        engine = await safe("label[data-uname='lotdetailEngine'] + div span")
-        fuel = await safe("label[data-uname='lotdetailFuel'] + span")
-        doc_type = title  # Пока что, он дублируется из title
-        vin = await safe("label[data-uname='lotdetailVin'] + div span")
+        try:
+            title = await page.inner_text("h1.title")
+        except:
+            title = "-"
+
+        try:
+            location = await page.inner_text("a[data-uname='lotdetailSaleinformationlocationvalue']")
+        except:
+            location = "-"
+
+        try:
+            engine = await page.inner_text("span[data-uname='lotdetailEnginetype']")
+        except:
+            engine = "-"
+
+        try:
+            fuel = await page.inner_text("span[data-uname='lotdetailFuelvalue']")
+        except:
+            fuel = "-"
+
+        try:
+            doc_type = await page.inner_text("span[data-uname='lotdetailTitledescriptionvalue'] span span")
+        except:
+            doc_type = "-"
+
+        try:
+            vin = await page.locator("label[data-uname='lotdetailVin']").locator("..").locator("..").locator("span.lot-details-desc").inner_text()
+        except:
+            vin = "-"
 
         await browser.close()
 
