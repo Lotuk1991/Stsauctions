@@ -1,7 +1,6 @@
 from aiogram import types
 from copart_lot_parser import get_lot_info
 
-from loader import dp
 
 @dp.message_handler(commands=["lot"])
 async def lot_handler(message: types.Message):
