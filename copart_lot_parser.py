@@ -8,7 +8,7 @@ async def get_lot_info(lot_number: str) -> dict:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context()
 
-        # Загрузка cookies
+        # Загружаем cookies
         with open("cookies.json", "r") as f:
             cookies = json.load(f)
         await context.add_cookies(cookies)
@@ -16,34 +16,33 @@ async def get_lot_info(lot_number: str) -> dict:
         page = await context.new_page()
         await page.goto(url, timeout=60000)
 
-        # Извлечение информации
         try:
-            title = await page.inner_text("label[data-uname='lotdetailTitledescription'] + span span")  # Название
+            title = await page.locator("label[data-uname='lotdetailTitledescription']").locator("..").locator("span span").text_content()
         except:
             title = "No title"
 
         try:
-            location = await page.inner_text("label[data-uname='lotdetailSaleinformationlocationlabel'] + span")  # Локация
+            location = await page.locator("label[data-uname='lotdetailSaleinformationlocationlabel']").locator("..").locator("span").text_content()
         except:
             location = "No location"
 
         try:
-            engine = await page.inner_text("label[data-uname='lotdetailEngine'] + div span")  # Двигатель
+            engine = await page.locator("label[data-uname='lotdetailEngine']").locator("..").locator("span").text_content()
         except:
             engine = "No engine"
 
         try:
-            fuel = await page.inner_text("label[data-uname='lotdetailFuel'] + span")  # Топливо
+            fuel = await page.locator("label[data-uname='lotdetailFuel']").locator("..").locator("span").text_content()
         except:
             fuel = "No fuel"
 
         try:
-            doc_type = await page.inner_text("label[data-uname='lotdetailTitledescription'] + span span")  # Документ
+            doc_type = await page.locator("label[data-uname='lotdetailTitledescription']").locator("..").locator("span span").text_content()
         except:
             doc_type = "No doc"
 
         try:
-            vin = await page.inner_text("label[data-uname='lotdetailVin'] + div span")  # VIN
+            vin = await page.locator("label[data-uname='lotdetailVin']").locator("..").locator("span").text_content()
         except:
             vin = "No VIN"
 
