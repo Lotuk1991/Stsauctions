@@ -35,4 +35,4 @@ def get_iaai_lot_info(lot_id: str) -> str:
 🖼 Фото: {data.get('ImageUrl')}
 """
     except Exception as e:
-        return f"❌ IAAI помилка: {e}"es 
+        return f"❌ IAAI помилка: {e}"
