@@ -1,39 +1,36 @@
-from aiogram import types, Dispatcher
-from copart_lot_parser import get_lot_info
+from playwright.sync_api import sync_playwright
+import json
 
-async def lot_handler(message: types.Message):
-    args = message.get_args()
-    if not args or not args.isdigit():
-        await message.reply("Будь ласка, введи номер лота. Наприклад:\n/lot 49490485")
-        return
+def get_lot_data(lot_id: str) -> str:
+    COOKIES_FILE = "cookies.json"
+    API_URL = f"https://www.copart.com/public/data/lotdetails/solr/{lot_id}"
 
-    lot_number = args.strip()
-    await message.answer(f"🔍 Шукаю інформацію по лоту `{lot_number}`...")
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
 
-    try:
-        info = await get_lot_info(lot_number)
+        with open(COOKIES_FILE, "r") as f:
+            cookies = json.load(f)
+        context.add_cookies(cookies)
 
-        if "error" in info:
-            await message.answer(
-                f"⚠️ {info['error']}\n🔗 [Переглянути лот]({info.get('url', '')})",
-                parse_mode="Markdown"
-            )
-            return
+        page = context.new_page()
+        page.goto("https://www.copart.com")
 
-        text = (
-            f"🚗 **{info.get('title', '-') or '-'}**\n"
-            f"📍 Місце продажу: *{info.get('location', '-') or '-'}*\n"
-            f"🛠️ Двигун: {info.get('engine', '-') or '-'}\n"
-            f"⛽ Паливо: {info.get('fuel', '-') or '-'}\n"
-            f"📄 Документ: {info.get('doc_type', '-') or '-'}\n"
-            f"🔍 VIN: `{info.get('vin', '-') or '-'}`\n\n"
-            f"🔗 [Переглянути лот]({info.get('url', '')})"
-        )
+        response = page.request.get(API_URL)
+        if response.status != 200:
+            return f"❌ Лот {lot_id} не знайден (код {response.status})"
 
-        await message.answer(text, parse_mode="Markdown")
-    except Exception as e:
-        print(f"LOT ERROR: {e}")
-        await message.answer("❌ Помилка при отриманні лота. Спробуйте пізніше.")
+        json_data = response.json()
+        lot = json_data.get("data", {}).get("lotDetails", {})
 
-def register_handlers(dp: Dispatcher):
-    dp.register_message_handler(lot_handler, commands=["lot"])
+        # Собираем ответ
+        text = f"""📌 <b>Інформація про лот {lot_id}</b>:
+🚗 <b>Авто:</b> {lot.get('lcy')} {lot.get('lmg')} {lot.get('mkn')}
+🔑 <b>VIN:</b> {lot.get('vin')}
+📉 <b>Пробіг:</b> {lot.get('orr')} {lot.get('odometerBrand')}
+📍 <b>Локація:</b> {lot.get('yn')} – {lot.get('ynm')}
+⛽️ <b>Двигун:</b> {lot.get('ft')} ({lot.get('egn')})
+💥 <b>Пошкодження:</b> {lot.get('sdd')} ({lot.get('cr')})
+🛒 <b>Статус продажу:</b> {lot.get('lotSoldStatus')} ({lot.get('lotSold')})
+"""
+        return text
