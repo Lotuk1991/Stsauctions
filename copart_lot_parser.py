@@ -8,43 +8,33 @@ async def get_lot_info(lot_number: str) -> dict:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context()
 
-        # Загружаем cookies
-        with open("cookies.json", "r") as f:
-            cookies = json.load(f)
-        await context.add_cookies(cookies)
+        try:
+            with open("cookies.json", "r") as f:
+                cookies = json.load(f)
+            await context.add_cookies(cookies)
+        except Exception as e:
+            return {"error": f"Ошибка загрузки cookies: {e}"}
 
         page = await context.new_page()
-        await page.goto(url, timeout=60000)
-
         try:
-            title = await page.locator("label[data-uname='lotdetailTitledescription']").locator("..").locator("span span").text_content()
-        except:
-            title = "No title"
+            await page.goto(url, timeout=60000)
+            await page.wait_for_selector("label[data-uname='lotdetailVin']", timeout=15000)
+        except Exception as e:
+            await browser.close()
+            return {"error": f"Ошибка загрузки страницы: {e}"}
 
-        try:
-            location = await page.locator("label[data-uname='lotdetailSaleinformationlocationlabel']").locator("..").locator("span").text_content()
-        except:
-            location = "No location"
+        def safe_text(selector):
+            try:
+                return page.inner_text(selector)
+            except:
+                return None
 
-        try:
-            engine = await page.locator("label[data-uname='lotdetailEngine']").locator("..").locator("span").text_content()
-        except:
-            engine = "No engine"
-
-        try:
-            fuel = await page.locator("label[data-uname='lotdetailFuel']").locator("..").locator("span").text_content()
-        except:
-            fuel = "No fuel"
-
-        try:
-            doc_type = await page.locator("label[data-uname='lotdetailTitledescription']").locator("..").locator("span span").text_content()
-        except:
-            doc_type = "No doc"
-
-        try:
-            vin = await page.locator("label[data-uname='lotdetailVin']").locator("..").locator("span").text_content()
-        except:
-            vin = "No VIN"
+        title = await safe_text("label[data-uname='lotdetailTitledescription'] + span span") or "No title"
+        location = await safe_text("label[data-uname='lotdetailSaleinformationlocationlabel'] + span") or "No location"
+        engine = await safe_text("label[data-uname='lotdetailEngine'] + div span") or "No engine"
+        fuel = await safe_text("label[data-uname='lotdetailFuel'] + span") or "No fuel"
+        doc_type = await safe_text("label[data-uname='lotdetailTitledescription'] + span span") or "No doc"
+        vin = await safe_text("label[data-uname='lotdetailVin'] + div span") or "No VIN"
 
         await browser.close()
 
