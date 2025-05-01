@@ -1,36 +1,13 @@
-from playwright.sync_api import sync_playwright
-import json
+from aiogram import types
+from copart_lot_parser import get_copart_lot_info
 
-def get_lot_data(lot_id: str) -> str:
-    COOKIES_FILE = "cookies.json"
-    API_URL = f"https://www.copart.com/public/data/lotdetails/solr/{lot_id}"
+@dp.message_handler(commands=["lot"])
+async def handle_lot_command(message: types.Message):
+    lot_id = message.get_args().strip()
+    if not lot_id.isdigit():
+        await message.reply("❗️Вкажи номер лота після /lot")
+        return
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-
-        with open(COOKIES_FILE, "r") as f:
-            cookies = json.load(f)
-        context.add_cookies(cookies)
-
-        page = context.new_page()
-        page.goto("https://www.copart.com")
-
-        response = page.request.get(API_URL)
-        if response.status != 200:
-            return f"❌ Лот {lot_id} не знайден (код {response.status})"
-
-        json_data = response.json()
-        lot = json_data.get("data", {}).get("lotDetails", {})
-
-        # Собираем ответ
-        text = f"""📌 <b>Інформація про лот {lot_id}</b>:
-🚗 <b>Авто:</b> {lot.get('lcy')} {lot.get('lmg')} {lot.get('mkn')}
-🔑 <b>VIN:</b> {lot.get('vin')}
-📉 <b>Пробіг:</b> {lot.get('orr')} {lot.get('odometerBrand')}
-📍 <b>Локація:</b> {lot.get('yn')} – {lot.get('ynm')}
-⛽️ <b>Двигун:</b> {lot.get('ft')} ({lot.get('egn')})
-💥 <b>Пошкодження:</b> {lot.get('sdd')} ({lot.get('cr')})
-🛒 <b>Статус продажу:</b> {lot.get('lotSoldStatus')} ({lot.get('lotSold')})
-"""
-        return text
+    await message.reply(f"🔍 Шукаю інформацію по лоту {lot_id}...")
+    result = get_copart_lot_info(lot_id)
+    await message.reply(result, parse_mode="HTML")
