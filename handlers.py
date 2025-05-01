@@ -12,9 +12,13 @@ async def lot_handler(message: types.Message):
 
     try:
         info = await get_lot_info(lot_number)
+        if info.get("error"):
+            await message.answer(f"⚠️ {info['error']}\n🔗 {info['url']}")
+            return
+
         text = (
-            f"🚘 **{info['title']}**\n"
-            f"📍 Місце продажу: *{info['location']}*\n"
+            f"🚘 *{info['title']}*\n"
+            f"📍 Локація: *{info['location']}*\n"
             f"🛠 Двигун: {info['engine']}\n"
             f"⛽️ Паливо: {info['fuel']}\n"
             f"📄 Документ: {info['doc_type']}\n"
@@ -23,8 +27,8 @@ async def lot_handler(message: types.Message):
         )
         await message.answer(text, parse_mode="Markdown")
     except Exception as e:
-        await message.answer("⚠️ Не вдалося отримати дані. Спробуйте пізніше.")
-        print(f"LOT ERROR: {e}")
+        await message.answer(f"❌ Помилка при отриманні лота. Спробуйте пізніше.")
+        print(f"[ERROR] lot_handler failed: {e}")
 
 def register_handlers(dp: Dispatcher):
     dp.register_message_handler(lot_handler, commands=["lot"])
