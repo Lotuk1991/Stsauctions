@@ -8,17 +8,17 @@ async def lot_handler(message: types.Message):
         return
 
     lot_number = args.strip()
-    await message.answer(f"🔍 Шукаю інформацію по лоту `{lot_number}`...")
+    await message.answer(f"🔍 Шукаю інформацію по лоту `{lot_number}`...", parse_mode="Markdown")
 
     try:
         info = await get_lot_info(lot_number)
         text = (
-            f"🚗 **{info['title']}**\n"
+            f"🚘 **{info['title']}**\n"
             f"📍 Місце продажу: *{info['location']}*\n"
-            f"🔋 Двигун: {info['engine']}\n"
+            f"🛠 Двигун: {info['engine']}\n"
             f"⛽️ Паливо: {info['fuel']}\n"
             f"📄 Документ: {info['doc_type']}\n"
-            f"🔑 VIN: `{info['vin']}`\n"
+            f"🔎 VIN: `{info['vin']}`\n"
             f"\n🔗 [Переглянути лот]({info['url']})"
         )
         await message.answer(text, parse_mode="Markdown")
