@@ -1,4 +1,5 @@
 from aiogram import types
+from main import dp  # импортируем dp
 from copart_lot_parser import get_copart_lot_info
 
 @dp.message_handler(commands=["lot"])
