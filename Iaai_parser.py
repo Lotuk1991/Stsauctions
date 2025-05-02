@@ -1,74 +1,29 @@
+import httpx
 import json
-import asyncio
-from playwright.async_api import async_playwright
 
-async def get_iaai_lot_info(lot_id: str, message) -> str:
+async def get_iaai_lot_info(lot_id: str) -> str:
+    url = f"https://iaai.lotuk1991.workers.dev/VehicleDetail/{lot_id}"
+
     try:
-        url = f"https://www.iaai.com/ru-ru/VehicleDetails/{lot_id}"
-
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            context = await browser.new_context(
-                locale="en-US",
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-                viewport={"width": 1280, "height": 800},
-                timezone_id="Europe/Kiev"
-            )
-
-            # Завантаження cookies
-            try:
-                with open("cookies_iaai.json", "r") as f:
-                    await context.add_cookies(json.load(f))
-            except Exception:
-                return "❌ Не вдалося завантажити cookies"
-
-            page = await context.new_page()
-            await page.goto(url, timeout=60000)
-
-            # Очікування повного завантаження + пауза для JS
-            await page.wait_for_load_state("networkidle")
-            await asyncio.sleep(3)
-
-            # Збереження HTML
-            html = await page.content()
-            with open("debug_iaai.html", "w", encoding="utf-8") as f:
-                f.write(html)
-
-            # Збереження скріншота
-            await page.screenshot(path="debug_iaai.png")
-
-            # Надсилання в Telegram
-            await message.answer_document(open("debug_iaai.html", "rb"))
-            await message.answer_document(open("debug_iaai.png", "rb"))
-
-            # Спроба знайти лот
-            try:
-                await page.wait_for_selector(".title-year", timeout=5000)
-            except:
-                return "❌ Сторінка IAAI не завантажилась"
-
-            def get(selector):
-                return page.locator(selector).nth(0).inner_text()
-
-            year = await get(".title-year")
-            make = await get(".title-make")
-            model = await get(".title-model")
-            vin = await get("span[data-uname='lotsearchLotdetailVIN']")
-            location = await get("div[data-uname='lotdetailSaleInfo']")
-            odometer = await get("li[data-uname='lotdetailOdometer']")
-            damage = await get("li[data-uname='lotdetailDamage']")
-            engine = await get("li[data-uname='lotdetailEngine']")
-            image = await page.locator("img.main-image").nth(0).get_attribute("src")
-
-            return f"""🔧 <b>IAAI Лот {lot_id}</b>
-🚗 {year} {make} {model}
-🆔 VIN: {vin}
-📍 Локація: {location}
-🧭 Пробіг: {odometer}
-💥 Пошкодження: {damage}
-⚙️ Двигун: {engine}
-🖼 Фото: {image}
-"""
-
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, timeout=30)
+            if response.status_code != 200:
+                return f"❌ IAAI статус: {response.status_code}"
+            data = response.json()
     except Exception as e:
-        return f"❌ Помилка IAAI: {e}"
+        return f"❌ IAAI помилка: {e}"
+
+    lot = data.get("data", {})
+
+    if not lot:
+        return f"❌ Лот {lot_id} не знайдено або порожній"
+
+    return f"""🔧 <b>IAAI Лот {lot_id}</b>
+🚗 {lot.get('Year')} {lot.get('Make')} {lot.get('Model')}
+🔑 VIN: {lot.get('Vin')}
+📍 Локація: {lot.get('AuctionLocationName')}
+📏 Пробіг: {lot.get('Odometer')} {lot.get('OdometerType')}
+💥 Пошкодження: {lot.get('LossType')} / {lot.get('Damage')}
+🛠 Двигун: {lot.get('Engine')}
+🖼 Фото: {lot.get('imageURL')}/{lot.get('imageName')}
+"""
