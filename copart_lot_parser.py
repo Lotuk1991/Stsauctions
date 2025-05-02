@@ -33,7 +33,7 @@ def get_lot_info(lot_id: str) -> str:
 
         return f"""📌 <b>Copart Лот {lot_id}</b>
 🚗 {lot.get('lcy')} {lot.get('lmg')} {lot.get('mkn')}
-🔑 VIN: {lot.get('vin')}
+🔑 VIN: {lot.get('fv')}
 📍 Локація: {lot.get('yn')} — {lot.get('ynm')}
 📉 Пробіг: {lot.get('orr')} {lot.get('odometerBrand')}
 💥 Пошкодження: {lot.get('sdd')} ({lot.get('cr')})
