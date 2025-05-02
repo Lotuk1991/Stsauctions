@@ -38,7 +38,7 @@ def get_iaai_full_info(lot_id: str) -> str:
             "Гілка": get_value("Selling Branch:"),
             "Пошкодження": get_value("Primary Damage:"),
             "Title": get_value("Title/Sale Doc:"),
-            "Статус VIN": get_value("VIN (Status):"),
+            "Статус VIN": get_value("VIN_VehInfo:"),
             "Пробіг": get_value("Odometer:"),
             "Ключі": get_value("Key:"),
             "Подушки": get_value("Airbags:"),
