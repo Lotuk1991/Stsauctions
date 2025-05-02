@@ -1,8 +1,9 @@
 import httpx
 import json
 from bs4 import BeautifulSoup
+from aiogram import types
 
-def get_iaai_lot_info(lot_id: str) -> str:
+def get_iaai_lot_info(lot_id: str, message: types.Message) -> str:
     url = f"https://www.iaai.com/api/vehicle-lite/{lot_id}"
     page_url = f"https://www.iaai.com/ru-ru/VehicleDetail/{lot_id}~US"
 
@@ -35,19 +36,15 @@ def get_iaai_lot_info(lot_id: str) -> str:
 🖼 Фото: {data.get('ImageUrl')}
 """
             except Exception:
-                pass  # fallback ниже
+                pass
 
-        # Fallback: HTML парсинг
-        return parse_iaai_html_fallback(lot_id, cookies)
+        return await parse_iaai_html_fallback(lot_id, cookies, message)
 
     except Exception as e:
         return f"❌ IAAI помилка: {e}"
 
-# ------------------------
-# 👇 HTML fallback парсер
-# ------------------------
 
-def parse_iaai_html_fallback(lot_id: str, cookies: dict) -> str:
+async def parse_iaai_html_fallback(lot_id: str, cookies: dict, message: types.Message) -> str:
     url = f"https://www.iaai.com/ru-ru/VehicleDetail/{lot_id}~US"
     headers = {
         "user-agent": "Mozilla/5.0"
@@ -56,11 +53,15 @@ def parse_iaai_html_fallback(lot_id: str, cookies: dict) -> str:
     try:
         r = httpx.get(url, headers=headers, cookies=cookies)
         if r.status_code != 200:
-            return f"❌ Fallback HTML статус: {r.status_code}"
+            return f"❌ HTML статус: {r.status_code}"
 
-        # Сохраняем HTML для анализа
-        with open("debug_iaai.html", "w", encoding="utf-8") as f:
+        html_path = "debug_iaai.html"
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write(r.text)
+
+        # отправляем HTML файл в Telegram
+        with open(html_path, "rb") as f:
+            await message.answer_document(types.InputFile(f), caption="📄 debug_iaai.html")
 
         soup = BeautifulSoup(r.text, "html.parser")
 
@@ -76,8 +77,8 @@ def parse_iaai_html_fallback(lot_id: str, cookies: dict) -> str:
         odometer = get_text("li[data-uname='lotdetailOdometer']")
         damage = get_text("li[data-uname='lotdetailPrimaryDamage']")
         engine = get_text("li[data-uname='lotdetailEngine']")
-        img_tag = soup.select_one("img.main-image")
-        image_url = img_tag['src'] if img_tag else "—"
+        img = soup.select_one("img.main-image")
+        image_url = img["src"] if img else "—"
 
         return f"""📌 <b>IAAI Лот {lot_id}</b>
 🚗 {year} {make} {model}
@@ -89,4 +90,4 @@ def parse_iaai_html_fallback(lot_id: str, cookies: dict) -> str:
 🖼 Фото: {image_url}
 """
     except Exception as e:
-        return f"❌ Помилка при парсингу HTML: {e}"
+        return f"❌ Парсинг HTML помилка: {e}"
