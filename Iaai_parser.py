@@ -31,14 +31,13 @@ async def get_iaai_lot_info(lot_id: str) -> str:
         return f"❌ IAAI ошибка: {e}"
 
     try:
-        vehicle = data.get("Vehicles", [{}])[0]
-        return f"""🔧 <b>IAAI Лот {lot_id}</b>
-🚗 {vehicle.get("ModelYear")} {vehicle.get("MakeName")} {vehicle.get("ModelName")}
-🔑 VIN: {vehicle.get("Vin")}
-📍 Локація: {vehicle.get("AuctionName")}
-📊 Пробіг: {vehicle.get("Odometer")} {vehicle.get("OdometerType")}
-💥 Пошкодження: {vehicle.get("LossType")} / {vehicle.get("Damage")}
-🛠 Двигун: {vehicle.get("Engine")}
-🖼 Фото: {vehicle.get("PrimaryImageUrl")}"""
+        vehicle = data
+
+return f"""📌 <b>IAAI Лот {lot_id}</b>
+🆔 Stock #: {vehicle.get('StockNumber')}
+🔑 VIN: {vehicle.get('Vin')}
+🏢 Branch #: {vehicle.get('AdministrativeBranchNumber')}
+🛠 Тип: {vehicle.get('SalvageType')}"""
+
     except Exception:
         return "❌ Не удалось разобрать данные от IAAI"
