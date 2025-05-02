@@ -25,9 +25,12 @@ def get_iaai_full_info(lot_id: str) -> str:
         soup = BeautifulSoup(r.text, "html.parser")
 
         def get_value(label):
-            el = soup.find("div", string=label)
-            if el and el.find_next_sibling("div"):
-                return el.find_next_sibling("div").text.strip()
+            for li in soup.select("li.data-list__item"):
+                label_span = li.find("span", class_="data-list__label")
+                if label_span and label.strip() in label_span.text.strip():
+                    value_span = li.find("span", class_="data-list__value")
+                    if value_span:
+                        return value_span.text.strip()
             return "—"
 
         info = {
