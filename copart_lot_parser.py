@@ -4,52 +4,42 @@ import json
 def get_lot_info(lot_id: str) -> str:
     url = f"https://www.copart.com/public/data/lotdetails/solr/{lot_id}"
 
-    # Загружаем cookies
-    with open("cookies.json", "r") as f:
-        cookies = {c["name"]: c["value"] for c in json.load(f)}
-
-    headers = {
-        "user-agent": "Mozilla/5.0",
-        "accept": "application/json",
-        "referer": f"https://www.copart.com/lot/{lot_id}",
-        "accept-language": "en-US,en;q=0.9",
-    }
-
     try:
+        with open("cookies.json", "r") as f:
+            cookies = {c["name"]: c["value"] for c in json.load(f)}
+
+        headers = {
+            "user-agent": "Mozilla/5.0",
+            "accept": "application/json",
+            "referer": f"https://www.copart.com/lot/{lot_id}",
+        }
+
         r = httpx.get(url, headers=headers, cookies=cookies, timeout=10)
 
-        # Логируем ответ в консоль
-        print(f"📥 Status: {r.status_code}")
-        print(f"📥 Body (first 500 chars):\n{r.text[:500]}")
-
-        # Проверка на статус
         if r.status_code != 200:
-            return f"❌ Статус {r.status_code}: Copart відмовився відповідати."
+            return f"❌ Copart статус: {r.status_code}"
 
-        # Проверка на пустой ответ
         if not r.text.strip():
-            return "❌ Copart повернув порожню відповідь. Можливо, cookies недійсні або IP заблоковано."
+            return "❌ Copart повернув порожню відповідь. Можливо, cookies неактуальні або IP заблоковано."
 
-        # Пробуем распарсить JSON
         try:
             data = r.json()
         except Exception:
-            return "❌ Помилка: Copart повернув не-JSON. Можливо, тебе заблокували."
+            return "❌ Помилка: Copart повернув не-JSON. Можливо, HTML або блокування."
 
-        # Проверка на отсутствие лота
         lot = data.get("data", {}).get("lotDetails", {})
         if not lot:
-            return f"❌ Лот {lot_id} не знайдено або порожній."
+            return f"❌ Лот {lot_id} не знайдено або недоступний."
 
-        # Готовим сообщение
-        return f"""📌 <b>Лот {lot_id}</b>
+        return f"""📌 <b>Copart Лот {lot_id}</b>
 🚗 {lot.get('lcy')} {lot.get('lmg')} {lot.get('mkn')}
-🔑 VIN: {lot.get('fv')}
-📍 Локація: {lot.get('yn')}
+🔑 VIN: {lot.get('vin')}
+📍 Локація: {lot.get('yn')} — {lot.get('ynm')}
 📉 Пробіг: {lot.get('orr')} {lot.get('odometerBrand')}
-💥 Тайтл: {lot.get('tgd')} 
+💥 Пошкодження: {lot.get('sdd')} ({lot.get('cr')})
 ⛽ Двигун: {lot.get('ft')} ({lot.get('egn')})
-🛒 Привод: {lot.get('drv')}
+🛒 Статус: {lot.get('lotSoldStatus')} ({lot.get('lotSold')})
+🖼 Фото: {lot.get('imageURL')}/{lot.get('imageName')}
 """
     except Exception as e:
-        return f"❌ Несподівана помилка: {e}"
+        return f"❌ Copart помилка: {e}"
