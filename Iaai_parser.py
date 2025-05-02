@@ -17,7 +17,8 @@ async def get_iaai_lot_info(lot_id: str) -> str:
 
             page = await context.new_page()
             await page.goto(url, timeout=60000)
-
+            with open("debug_iaai.html", "w", encoding="utf-8") as f:
+                f.write(await page.content())
             try:
                 await page.wait_for_selector(".title-year", timeout=15000)
             except:
