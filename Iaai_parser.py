@@ -3,7 +3,7 @@ import json
 from bs4 import BeautifulSoup
 from aiogram import types
 
-def get_iaai_lot_info(lot_id: str, message: types.Message) -> str:
+async def get_iaai_lot_info(lot_id: str, message: types.Message) -> str:
     url = f"https://www.iaai.com/api/vehicle-lite/{lot_id}"
     page_url = f"https://www.iaai.com/ru-ru/VehicleDetail/{lot_id}~US"
 
