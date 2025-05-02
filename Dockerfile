@@ -1,31 +1,14 @@
-# Базовый образ
-FROM python:3.10-slim
+# Базовый образ с поддержкой Playwright и Python 3.10
+FROM mcr.microsoft.com/playwright/python:v1.42.0
 
-# Устанавливаем системные зависимости
-RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    gnupg \
-    unzip \
-    fonts-liberation \
-    libnss3 \
-    libatk-bridge2.0-0 \
-    libxss1 \
-    libasound2 \
-    libgbm1 \
-    libgtk-3-0 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Устанавливаем playwright-зависимости
-RUN pip install --upgrade pip
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-
-
-# Копируем исходный код бота
-COPY . /app
+# Рабочая директория
 WORKDIR /app
 
-# Команда запуска
+# Копируем проект в контейнер
+COPY . .
+
+# Устанавливаем зависимости Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Запускаем main.py (в aiogram 2.x)
 CMD ["python", "main.py"]
