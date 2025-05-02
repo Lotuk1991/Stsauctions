@@ -1,4 +1,5 @@
 import json
+import asyncio
 from playwright.async_api import async_playwright
 
 async def get_iaai_lot_info(lot_id: str, message) -> str:
@@ -24,17 +25,25 @@ async def get_iaai_lot_info(lot_id: str, message) -> str:
             page = await context.new_page()
             await page.goto(url, timeout=60000)
 
+            # Очікування повного завантаження + пауза для JS
+            await page.wait_for_load_state("networkidle")
+            await asyncio.sleep(3)
+
             # Збереження HTML
             html = await page.content()
             with open("debug_iaai.html", "w", encoding="utf-8") as f:
                 f.write(html)
 
-            # Відправка файлу в Telegram
-            await message.answer_document(open("debug_iaai.html", "rb"))
+            # Збереження скріншота
+            await page.screenshot(path="debug_iaai.png")
 
-            # Очікування завантаження
+            # Надсилання в Telegram
+            await message.answer_document(open("debug_iaai.html", "rb"))
+            await message.answer_document(open("debug_iaai.png", "rb"))
+
+            # Спроба знайти лот
             try:
-                await page.wait_for_selector(".title-year", timeout=10000)
+                await page.wait_for_selector(".title-year", timeout=5000)
             except:
                 return "❌ Сторінка IAAI не завантажилась"
 
