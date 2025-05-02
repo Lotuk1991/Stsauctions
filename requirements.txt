@@ -1,6 +1,6 @@
+aiogram==2.25.2
+aiohttp==3.8.1
+httpx==0.27.0
+beautifulsoup4==4.12.2
 playwright==1.42.0
-beautifulsoup4
-httpx
-aiogram
-
 
