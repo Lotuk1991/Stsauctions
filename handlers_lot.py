@@ -41,6 +41,8 @@ async def parse_lot(message: types.Message, state: FSMContext):
     if auction == "copart":
         result = get_lot_info(lot_id)
     else:
+        print("👉 запуск IAAI парсера")
         result = get_iaai_lot_via_playwright(lot_id)
+        print("✅ парсинг завершено")
 
     await message.answer(result, parse_mode="HTML")
