@@ -3,7 +3,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from bot import dp
 from copart_lot_parser import get_lot_info
-from Iaai_parser import get_iaai_lot_info
+from Iaai_parser import get_iaai_lot_via_playwright
 
 class AuctionState(StatesGroup):
     choosing_auction = State()
@@ -41,6 +41,6 @@ async def parse_lot(message: types.Message, state: FSMContext):
     if auction == "copart":
         result = get_lot_info(lot_id)
     else:
-        result = await get_iaai_lot_info(lot_id, message)
+        result = get_iaai_lot_via_playwright(lot_id)
 
     await message.answer(result, parse_mode="HTML")
