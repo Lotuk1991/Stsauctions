@@ -3,7 +3,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from bot import dp
 from copart_lot_parser import get_lot_info
-from Iaai_parser import get_iaai_lot_info
+from iaai_parser import get_iaai_lot_info  # не async!
 
 class AuctionState(StatesGroup):
     choosing_auction = State()
@@ -21,7 +21,6 @@ async def ask_lot_number(message: types.Message, state: FSMContext):
     auction = message.text.strip().lower()
     if auction not in ["copart", "iaai"]:
         return await message.answer("❗️Будь ласка, оберіть Copart або IAAI")
-
     await state.update_data(auction=auction)
     await message.answer("Введіть номер лота:", reply_markup=types.ReplyKeyboardRemove())
     await AuctionState.entering_lot.set()
@@ -41,8 +40,7 @@ async def parse_lot(message: types.Message, state: FSMContext):
     if auction == "copart":
         result = get_lot_info(lot_id)
     else:
-        print("👉 запуск IAAI парсера")
-        result = await get_iaai_lot_info(lot_id)
-        print("✅ парсинг завершено")
+        result = get_iaai_lot_info(lot_id)  # не await!
 
     await message.answer(result, parse_mode="HTML")
+
