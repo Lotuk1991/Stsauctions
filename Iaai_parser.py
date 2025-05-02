@@ -33,7 +33,7 @@ async def get_iaai_lot_info(lot_id: str) -> str:
     try:
         vehicle = data.get("Vehicles", [{}])[0]
         return f"""🔧 <b>IAAI Лот {lot_id}</b>
-🚗 {vehicle.get("Year")} {vehicle.get("Make")} {vehicle.get("Model")}
+🚗 {vehicle.get("ModelYear")} {vehicle.get("MakeName")} {vehicle.get("ModelName")}
 🔑 VIN: {vehicle.get("Vin")}
 📍 Локація: {vehicle.get("AuctionName")}
 📊 Пробіг: {vehicle.get("Odometer")} {vehicle.get("OdometerType")}
