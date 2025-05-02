@@ -7,7 +7,12 @@ async def get_iaai_lot_info(lot_id: str, message) -> str:
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
-            context = await browser.new_context()
+            context = await browser.new_context(
+                locale="en-US",
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                viewport={"width": 1280, "height": 800},
+                timezone_id="Europe/Kiev"
+            )
 
             # Завантаження cookies
             try:
