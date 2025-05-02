@@ -42,7 +42,7 @@ async def parse_lot(message: types.Message, state: FSMContext):
         result = get_lot_info(lot_id)
     else:
         print("👉 запуск IAAI парсера")
-        result = await get_iaai_lot_info(lot_id)
+        result = await get_iaai_lot_info(lot_id, message)
         print("✅ парсинг завершено")
 
     await message.answer(result, parse_mode="HTML")
