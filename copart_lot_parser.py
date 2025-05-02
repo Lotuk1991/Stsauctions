@@ -33,13 +33,13 @@ def get_lot_info(lot_id: str) -> str:
 
         return f"""📌 <b>Copart Лот {lot_id}</b>
 🚗 {lot.get('lcy')} {lot.get('lmg')} {lot.get('mkn')}
-🔑 VIN: {lot.get('fv')}
+🔑 VIN: {lot.get('vin')}
 📍 Локація: {lot.get('yn')} — {lot.get('ynm')}
 📉 Пробіг: {lot.get('orr')} {lot.get('odometerBrand')}
 💥 Пошкодження: {lot.get('sdd')} ({lot.get('cr')})
 ⛽ Двигун: {lot.get('ft')} ({lot.get('egn')})
 🛒 Статус: {lot.get('lotSoldStatus')} ({lot.get('lotSold')})
-🖼 Фото: {lot.get('image_file_url')}/{lot.get('imageName')}
+🖼 Фото: {lot.get('image')}/{lot.get('imageName')}
 """
     except Exception as e:
         return f"❌ Copart помилка: {e}"
