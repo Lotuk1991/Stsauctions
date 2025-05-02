@@ -36,12 +36,17 @@ def get_iaai_lot_info(lot_id: str) -> str:
 """
             except Exception:
                 pass  # fallback ниже
-        # Fallback
+
+        # Fallback: HTML парсинг
         return parse_iaai_html_fallback(lot_id, cookies)
+
     except Exception as e:
         return f"❌ IAAI помилка: {e}"
 
-# ⬇️ Fallback HTML парсер
+# ------------------------
+# 👇 HTML fallback парсер
+# ------------------------
+
 def parse_iaai_html_fallback(lot_id: str, cookies: dict) -> str:
     url = f"https://www.iaai.com/ru-ru/VehicleDetail/{lot_id}~US"
     headers = {
@@ -52,6 +57,10 @@ def parse_iaai_html_fallback(lot_id: str, cookies: dict) -> str:
         r = httpx.get(url, headers=headers, cookies=cookies)
         if r.status_code != 200:
             return f"❌ Fallback HTML статус: {r.status_code}"
+
+        # Сохраняем HTML для анализа
+        with open("debug_iaai.html", "w", encoding="utf-8") as f:
+            f.write(r.text)
 
         soup = BeautifulSoup(r.text, "html.parser")
 
