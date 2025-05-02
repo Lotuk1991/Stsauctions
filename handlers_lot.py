@@ -3,7 +3,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from bot import dp
 from copart_lot_parser import get_lot_info
-from Iaai_parser import get_iaai_lot_via_playwright
+from Iaai_parser import get_iaai_lot_info
 
 class AuctionState(StatesGroup):
     choosing_auction = State()
@@ -42,7 +42,7 @@ async def parse_lot(message: types.Message, state: FSMContext):
         result = get_lot_info(lot_id)
     else:
         print("👉 запуск IAAI парсера")
-        result = await get_iaai_lot_via_playwright(lot_id)  # якщо async версія
+        result = await get_iaai_lot_info(lot_id)
         print("✅ парсинг завершено")
 
     await message.answer(result, parse_mode="HTML")
