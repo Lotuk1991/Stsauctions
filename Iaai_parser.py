@@ -1,45 +1,42 @@
 import json
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 
-def get_iaai_lot_via_playwright(lot_id: str) -> str:
+async def get_iaai_lot_info(lot_id: str) -> str:
     try:
         url = f"https://www.iaai.com/ru-ru/VehicleDetail/{lot_id}~US"
 
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context()
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context()
 
-            with open("cookies_iaai.json", "r") as f:
-                context.add_cookies(json.load(f))
+            try:
+                with open("cookies_iaai.json", "r") as f:
+                    await context.add_cookies(json.load(f))
+            except Exception:
+                return "❌ Не вдалося завантажити cookies"
 
-            page = context.new_page()
-            page.goto(url, timeout=60000)
+            page = await context.new_page()
+            await page.goto(url, timeout=60000)
 
-            page.wait_for_selector(".title-year", timeout=15000)
+            try:
+                await page.wait_for_selector(".title-year", timeout=15000)
+            except:
+                return "❌ Сторінка IAAI не завантажилась"
 
             def get(selector):
-                try:
-                    return page.locator(selector).nth(0).inner_text().strip()
-                except:
-                    return "—"
+                return page.locator(selector).nth(0)
 
-            def get_attr(selector, attr):
-                try:
-                    return page.locator(selector).nth(0).get_attribute(attr)
-                except:
-                    return "—"
+            year = await get(".title-year").inner_text()
+            make = await get(".title-make").inner_text()
+            model = await get(".title-model").inner_text()
+            vin = await get("span[data-uname='lotdetailVIN']").inner_text()
+            location = await get("div[data-uname='lotdetailSaleInfo']").inner_text()
+            odometer = await get("li[data-uname='lotdetailOdometer']").inner_text()
+            damage = await get("li[data-uname='lotdetailPrimaryDamage']").inner_text()
+            engine = await get("li[data-uname='lotdetailEngine']").inner_text()
+            image = await get("img.main-image").get_attribute("src")
 
-            year = get(".title-year")
-            make = get(".title-make")
-            model = get(".title-model")
-            vin = get("span[data-uname='lotdetailVIN']")
-            location = get("div[data-uname='lotdetailSaleInfo']")
-            odometer = get("li[data-uname='lotdetailOdometer']")
-            damage = get("li[data-uname='lotdetailPrimaryDamage']")
-            engine = get("li[data-uname='lotdetailEngine']")
-            image_url = get_attr("img.main-image", "src")
-
-            browser.close()
+            await browser.close()
 
             return f"""📌 <b>IAAI Лот {lot_id}</b>
 🚗 {year} {make} {model}
@@ -48,7 +45,7 @@ def get_iaai_lot_via_playwright(lot_id: str) -> str:
 📉 Пробіг: {odometer}
 💥 Пошкодження: {damage}
 ⛽ Двигун: {engine}
-🖼 Фото: {image_url}
+🖼 Фото: {image}
 """
     except Exception as e:
-        return f"❌ Помилка Playwright: {e}"
+        return f"❌ Playwright помилка: {e}"
