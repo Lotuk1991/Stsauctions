@@ -1,48 +1,33 @@
-import httpx
-from bs4 import BeautifulSoup
+import asyncio
+from playwright.async_api import async_playwright
 
-def get_iaai_full_info(lot_id: str) -> str:
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+async def get_iaai_full_info(lot_id: str) -> str:
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        
+        # Отримуємо salvageId
+        await page.goto(f"https://www.iaai.com/VehicleDetail/{lot_id}~US", timeout=60000)
+        await page.wait_for_selector("ul.data-list--details", timeout=10000)
 
-    try:
-        r = httpx.get(f"https://vis.iaai.com/Home/GetVehicleData?salvageId={lot_id}", headers=headers)
-        r.raise_for_status()
-        data = r.json()
-        salvage_id = data.get("SalvageId")
-        if not salvage_id:
-            return "❌ Не вдалося отримати salvage_id"
-    except Exception as e:
-        return f"❌ Помилка запиту до IAAI: {e}"
-
-    try:
-        html_url = f"https://www.iaai.com/VehicleDetail/{salvage_id}~US"
-        r = httpx.get(html_url, headers=headers)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.text, "html.parser")
-
-        def extract_value(label):
-            for li in soup.select("ul.data-list--details > li.data-list__item"):
-                label_span = li.select_one("span.data-list__label")
-                value_span = li.select_one("span.data-list__value")
-                if label_span and value_span and label.lower() in label_span.text.strip().lower():
-                    return value_span.text.strip()
-            return "—"
+        def get_text(label: str) -> str:
+            return page.locator(f"li:has(span.data-list__label >> text={label}) span.data-list__value").first.text_content()
 
         info = {
-            "Марка/Модель": extract_value("Vehicle:"),
-            "Гілка": extract_value("Selling Branch:"),
-            "Пошкодження": extract_value("Primary Damage:"),
-            "Title": extract_value("Title/Sale Doc:"),
-            "Статус VIN": extract_value("VIN (Status):"),
-            "Пробіг": extract_value("Odometer:"),
-            "Ключі": extract_value("Key:"),
-            "Подушки": extract_value("Airbags:"),
-            "Тип кузова": extract_value("Body Style:"),
-            "Двигун": extract_value("Engine:"),
-            "Аукціон": extract_value("Auction Date and Time:")
+            "Марка/Модель": await get_text("Vehicle:") or "—",
+            "Гілка": await get_text("Selling Branch:") or "—",
+            "Пошкодження": await get_text("Primary Damage:") or "—",
+            "Title": await get_text("Title/Sale Doc:") or "—",
+            "Статус VIN": await get_text("VIN (Status):") or "—",
+            "Пробіг": await get_text("Odometer:") or "—",
+            "Ключі": await get_text("Key:") or "—",
+            "Подушки": await get_text("Airbags:") or "—",
+            "Тип кузова": await get_text("Body Style:") or "—",
+            "Двигун": await get_text("Engine:") or "—",
+            "Аукціон": await get_text("Auction Date and Time:") or "—",
         }
+
+        await browser.close()
 
         return f"""<b>🚗 IAAI Лот {lot_id}</b>
 Марка/Модель: {info["Марка/Модель"]}
@@ -56,5 +41,6 @@ def get_iaai_full_info(lot_id: str) -> str:
 🚘 Кузов: {info["Тип кузова"]}
 🔧 Двигун: {info["Двигун"]}
 ⏰ Аукціон: {info["Аукціон"]}"""
-    except Exception as e:
-        return f"❌ Не вдалося спарсити HTML: {e}"
+
+# Для запуску:
+# asyncio.run(get_iaai_full_info("42646912"))
