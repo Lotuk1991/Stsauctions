@@ -1,56 +1,41 @@
 import httpx
 from bs4 import BeautifulSoup
-import json
 
-def get_iaai_full_info(lot_id: str) -> str:
-    # 1. Получаем настоящий Salvage ID
+async def get_iaai_full_info(lot_id: str) -> str:
+    # 1. Отримуємо salvageId
     url_data = f"https://vis.iaai.com/Home/GetVehicleData?salvageId={lot_id}"
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+    headers = {"User-Agent": "Mozilla/5.0"}
 
     try:
-        r = httpx.get(url_data, headers=headers)
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url_data, headers=headers)
         if r.status_code != 200:
-            return f"❌ IAAI ошибка: {r.status_code}"
+            return f"❌ IAAI помилка: {r.status_code}"
         base_data = r.json()
         salvage_id = base_data.get("SalvageId")
     except Exception as e:
-        return f"❌ Не удалось получить данные о лоте: {e}"
+        return f"❌ Не вдалося отримати salvageId: {e}"
 
-    # 2. HTML-парсинг страницы VehicleDetail
+    # 2. HTML-парсинг детальної сторінки
     url_html = f"https://www.iaai.com/VehicleDetail/{salvage_id}"
     try:
-        r = httpx.get(url_html, headers=headers)
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url_html, headers=headers)
         soup = BeautifulSoup(r.text, "html.parser")
 
         def get_text(label):
-            block = soup.find("div", string=lambda t: t and label in t)
-            if block and block.find_next("div"):
-                return block.find_next("div").text.strip()
+            el = soup.find("div", class_="vehicle-info-label", string=label)
+            if el and el.find_next_sibling("div"):
+                return el.find_next_sibling("div").get_text(strip=True)
             return "—"
 
-        vin = soup.select_one("div[data-uname='lotdetailVin']")
-        vin_text = vin.text.strip() if vin else "—"
-
-        branch = get_text("Selling Branch")
-        damage = get_text("Primary Damage")
-        loss = get_text("Loss")
-        odometer = get_text("Odometer")
-        title = get_text("Title/Sale Doc")
-        model_tag = soup.select_one("h1")
-        model = model_tag.text.strip() if model_tag else "—"
-
-        image_tag = soup.select_one(".image-gallery img")
-        image = image_tag["src"] if image_tag else "—"
-
-        return f"""<b>🚘 IAAI Лот {lot_id}</b>
-{model}
-🔑 VIN: {vin_text}
-📍 Локация: {branch}
-📉 Пробег: {odometer}
-💥 Повреждения: {loss} / {damage}
-📄 Документ: {title}
-🖼️ Фото: {image}"""
+        return f"""
+<b>🚗 IAAI Лот {lot_id}</b>
+Марка/Модель: {get_text("VIN (Status):")}
+📍 Гілка: {get_text("Selling Branch")}
+🔧 Пошкодження: {get_text("Primary Damage")}
+📜 Title: {get_text("Title/Sale Doc")}
+🪪 Статус VIN: {get_text("VIN (Status):")}
+"""
     except Exception as e:
-        return f"❌ Не удалось спарсить HTML IAAI: {e}"
+        return f"❌ Не вдалося розпарсити HTML: {e}"
