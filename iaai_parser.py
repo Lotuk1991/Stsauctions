@@ -10,8 +10,14 @@ async def get_iaai_full_info(lot_id: str) -> str:
         await page.goto(f"https://www.iaai.com/VehicleDetail/{lot_id}~US", timeout=60000)
         await page.wait_for_selector("ul.data-list--details", timeout=10000)
 
-        def get_text(label: str) -> str:
-            return page.locator(f"li:has(span.data-list__label >> text={label}) span.data-list__value").first.text_content()
+        def get_value(label):
+          for item in soup.select(".data-list__item"):
+             key_el = item.select_one(".data-list__label")
+             val_el = item.select_one(".data-list__value")
+             if key_el and val_el and label.lower() in key_el.text.strip().lower():
+                return val_el.text.strip()
+           return "—"
+
 
         info = {
             "Марка/Модель": await get_text("Vehicle:") or "—",
