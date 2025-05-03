@@ -7,6 +7,7 @@ async def get_iaai_full_info(lot_id: str) -> str:
     try:
         # Замість прямого запиту — використовуємо проксі
         r = httpx.get(f"https://iaai.lotuk1991.workers.dev/?lot_id={lot_id}", headers=headers)
+        print(r.text[:1000])  # Логування перших 1000 символів HTML для перевірки
         if r.status_code != 200:
             return f"❌ Проксі помилка: {r.status_code}"
         soup = BeautifulSoup(r.text, "html.parser")
