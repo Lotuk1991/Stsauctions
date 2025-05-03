@@ -2,35 +2,21 @@ import httpx
 from bs4 import BeautifulSoup
 
 async def get_iaai_full_info(lot_id: str) -> str:
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+    headers = {"User-Agent": "Mozilla/5.0"}
 
-    # 1. Отримуємо salvageId з API
     try:
-        r = httpx.get(f"https://vis.iaai.com/Home/GetVehicleData?salvageId={lot_id}", headers=headers)
+        # Замість прямого запиту — використовуємо проксі
+        r = httpx.get(f"https://iaai.lotuk1991.workers.dev/?lot_id={lot_id}", headers=headers)
         if r.status_code != 200:
-            return f"❌ IAAI помилка: {r.status_code}"
-        data = r.json()
-        salvage_id = data.get("SalvageId")
-        if not salvage_id:
-            return "❌ Не вдалося отримати salvage_id"
-    except Exception as e:
-        return f"❌ Помилка запиту до IAAI: {e}"
-
-    # 2. Парсимо HTML
-    try:
-        html_url = f"https://www.iaai.com/VehicleDetail/{salvage_id}~US"
-        r = httpx.get(html_url, headers=headers)
+            return f"❌ Проксі помилка: {r.status_code}"
         soup = BeautifulSoup(r.text, "html.parser")
 
-        # Новий спосіб витягувати дані
         def get_value(label: str) -> str:
             for item in soup.select(".data-list__item"):
-                key_el = item.select_one(".data-list__label")
-                val_el = item.select_one(".data-list__value")
-                if key_el and val_el and label.lower() in key_el.text.strip().lower():
-                    return val_el.text.strip()
+                key = item.select_one(".data-list__label")
+                val = item.select_one(".data-list__value")
+                if key and val and label.lower() in key.text.strip().lower():
+                    return val.text.strip()
             return "—"
 
         info = {
@@ -46,7 +32,7 @@ async def get_iaai_full_info(lot_id: str) -> str:
             "Двигун": get_value("Engine:"),
             "Привід": get_value("Drive Line Type:"),
             "Паливо": get_value("Fuel Type:"),
-            "Аукціон": get_value("Auction Date and Time:"),  # можливо буде пусто
+            "Аукціон": get_value("Auction Date and Time:"),
         }
 
         result = f"""<b>🚗 IAAI Лот {lot_id}</b>
@@ -65,5 +51,6 @@ async def get_iaai_full_info(lot_id: str) -> str:
 ⏰ Аукціон: {info["Аукціон"]}"""
 
         return result
+
     except Exception as e:
-        return f"❌ Не вдалося спарсити сторінку IAAI: {e}"
+        return f"❌ Парсинг через проксі не вдався: {e}"
