@@ -3,7 +3,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from bot import dp
 from copart_lot_parser import get_lot_info
-from iaai_parser import get_iaai_full_info  # нова async-функція!
+import from iaai_parser import fetch_iaai_info  # нова async-функція!
 
 class AuctionState(StatesGroup):
     choosing_auction = State()
